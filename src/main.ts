@@ -21,7 +21,7 @@ export module Main {
             } else {
                 title = `${QueryString.tags} (${title})`;
             }
-            saveAs(blob, title + `.zip`);
+            saveAs(blob, title + ".zip");
         });
     }
 
