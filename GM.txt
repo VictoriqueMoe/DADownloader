@@ -1,0 +1,14 @@
+// ==UserScript==
+// @name         Deviant Art Auto Downloader
+// @namespace    victorique.moe
+// @version      0.0.1-ALPHA
+// @description  in test
+// @author       Victorique
+// @match        https://www.deviantart.com/*
+// @grant        none
+// @run-at       document-idle
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js
+// @require      https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js
+// @icon         https://i.imgur.com/nx5ejHb.png
+// @license      MIT
+// ==/UserScript==
