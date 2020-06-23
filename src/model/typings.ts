@@ -4,11 +4,20 @@ export type ImageContainerTyping = {
     height: number,
     width: number,
     filesize: number,
-    is_downloadable:boolean
+    isDownloadable:boolean
 };
 
 export type ResponseWrapper = {
     has_more: boolean,
     next_offset: number,
-    results: ImageContainerTyping
+    results: [{
+        deviation: ImageContainerTyping
+    }]
 };
+
+export type Query = {
+    method:string,
+    username:string,
+    offset:number,
+    limit:number
+}

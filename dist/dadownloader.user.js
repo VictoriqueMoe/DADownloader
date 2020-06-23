@@ -520,7 +520,7 @@ module.exports = function (list, options) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ./utils/Utils */ "./src/utils/Utils.ts"), __webpack_require__(/*! JSZip */ "JSZip"), __webpack_require__(/*! ./engine/impl/UIEngine */ "./src/engine/impl/UIEngine.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Utils_1, JSZip, UIEngine_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ./utils/Utils */ "./src/utils/Utils.ts"), __webpack_require__(/*! JSZip */ "JSZip"), __webpack_require__(/*! ./engine/impl/UIEngine */ "./src/engine/impl/UIEngine.ts"), __webpack_require__(/*! ./manager/module/ImageResolverGallery */ "./src/manager/module/ImageResolverGallery.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Utils_1, JSZip, UIEngine_1, ImageResolverGallery_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Main = void 0;
@@ -558,6 +558,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             let load = () => {
                 _uiEngine = new UIEngine_1.UIEngine(document);
                 _uiEngine.buildUI();
+                document.getElementById("downloadAllInit").addEventListener("click", async (ev) => {
+                    ev.preventDefault();
+                    _uiEngine.changeButtonText("Downloading please wait...");
+                    let username = document.querySelectorAll("#content-container [data-username]")[1].dataset.username;
+                    // harcode for all images for now
+                    let imageResolverGallery = new ImageResolverGallery_1.ImageResolverGallery();
+                    let images = await imageResolverGallery.parse(username);
+                    await doDownloadZip(images, `${username} - all images`);
+                });
             };
             if (_intervalUid == 0) {
                 _intervalUid = window.setInterval(() => {
@@ -655,8 +664,176 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 this._el = null;
             }
         }
+        changeButtonText(text) {
+            if (this._el != null) {
+                this._el.innerHTML = text;
+            }
+        }
     }
     exports.UIEngine = UIEngine;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+
+/***/ "./src/manager/AbstractImageResolver.ts":
+/*!**********************************************!*\
+  !*** ./src/manager/AbstractImageResolver.ts ***!
+  \**********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AbstractImageResolver = void 0;
+    class AbstractImageResolver {
+        constructor() {
+            this._queryEngine = new QueryEngine_1.QueryEngine();
+        }
+        async parse(userName) {
+            let query = this.getQuery(userName);
+            let rep = await this._doQuery(query);
+            let returnArr = this._parseResp(rep);
+            while (rep.has_more) {
+                query.offset = rep.next_offset;
+                rep = await this._doQuery(query);
+                returnArr = returnArr.concat(this._parseResp(rep));
+            }
+            return returnArr;
+        }
+        _doQuery(query) {
+            return this._queryEngine.query(query);
+        }
+        _parseResp(rep) {
+            let retArra = [];
+            let results = rep.results;
+            for (let result of results) {
+                let r = result.deviation;
+                if (r.is_downloadable) {
+                    retArra.push(new IDAimage_1.IDAimage(r));
+                }
+            }
+            return retArra;
+        }
+    }
+    exports.AbstractImageResolver = AbstractImageResolver;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+
+/***/ "./src/manager/impl/QueryEngine.ts":
+/*!*****************************************!*\
+  !*** ./src/manager/impl/QueryEngine.ts ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.QueryEngine = void 0;
+    class QueryEngine {
+        constructor() {
+            this.baseUrl = "https://www.deviantart.com/_napi/da-user-profile/api/";
+        }
+        query(query) {
+            let url = `${this.baseUrl}${query.method}?username=${query.username}&offset=${query.offset}&limit=${query.limit}`;
+            return fetch(url).then(value => value.json()).then(json => json);
+        }
+    }
+    exports.QueryEngine = QueryEngine;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+
+/***/ "./src/manager/module/ImageResolverGallery.ts":
+/*!****************************************************!*\
+  !*** ./src/manager/module/ImageResolverGallery.ts ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../AbstractImageResolver */ "./src/manager/AbstractImageResolver.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, AbstractImageResolver_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ImageResolverGallery = void 0;
+    class ImageResolverGallery extends AbstractImageResolver_1.AbstractImageResolver {
+        getQuery(username) {
+            return {
+                limit: 24,
+                method: "gallery/contents",
+                offset: 0,
+                username: username
+            };
+        }
+    }
+    exports.ImageResolverGallery = ImageResolverGallery;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+
+/***/ "./src/model/IDAimage.ts":
+/*!*******************************!*\
+  !*** ./src/model/IDAimage.ts ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../utils/Utils */ "./src/utils/Utils.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Utils_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.IDAimage = void 0;
+    class IDAimage {
+        constructor(image) {
+            this._actualImage = null;
+            this._title = image.title;
+            this._filesize = image.filesize;
+            this._src = image.src;
+            this._res = `${image.width}x${image.height}`;
+            this._actualImage = null;
+        }
+        get title() {
+            return this._title;
+        }
+        get src() {
+            return this._src;
+        }
+        get res() {
+            return this._res;
+        }
+        get filesize() {
+            return this._filesize;
+        }
+        get isInit() {
+            return this._actualImage != null;
+        }
+        get image() {
+            if (!this.isInit) {
+                throw new Error("Image has not been loaded yet");
+            }
+            return this._actualImage;
+        }
+        unloadImage() {
+            this._actualImage = null;
+        }
+        loadImage() {
+            if (this.isInit) {
+                return Promise.resolve();
+            }
+            return Utils_1.AjaxUtils.loadImage(this._src).then(image => {
+                this._actualImage = image;
+            });
+        }
+    }
+    exports.IDAimage = IDAimage;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 

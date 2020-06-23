@@ -34,4 +34,10 @@ export class UIEngine implements IUIEngine {
             this._el = null;
         }
     }
+
+    public changeButtonText(text: string): void {
+        if(this._el != null){
+            this._el.innerHTML = text;
+        }
+    }
 }
