@@ -11,17 +11,12 @@ export module Main {
     let _uiEngine: IUIEngine;
     let _init = false;
 
-    export function doDownloadZip(files: IDAimage[], title?: string): Promise<void> {
+    export function doDownloadZip(files: IDAimage[], title: string): Promise<void> {
         let zip: JSZip = new JSZip();
         for (let img of files) {
             zip.file(img.title, img.image);
         }
         return zip.generateAsync({type: "blob"}).then(blob => {
-            if (!title) {
-                title = QueryString.tags;
-            } else {
-                title = `${QueryString.tags} (${title})`;
-            }
             saveAs(blob, title + ".zip");
         });
     }
@@ -35,6 +30,23 @@ export module Main {
         _init = false;
     }
 
+    async function doDownload(images: IDAimage[]): Promise<void> {
+        let count = 0;
+        let failedImages: IDAimage[] = [];
+        let pArray = images.map(im => im.loadImage().then(()=> {
+            count++;
+            _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+        }).catch(() => {
+            failedImages.push(im);
+        }));
+        if (failedImages.length > 0) {
+            return doDownload(failedImages);
+        }
+
+        await Promise.all(pArray);
+        return Promise.resolve();
+    }
+
     export function init() {
         let load = () => {
             _uiEngine = new UIEngine(document);
@@ -45,8 +57,14 @@ export module Main {
                 let username = (document.querySelectorAll("#content-container [data-username]")[1] as HTMLElement).dataset.username;
                 // harcode for all images for now
                 let imageResolverGallery = new ImageResolverGallery();
-                let images = await imageResolverGallery.parse(username);
-                await doDownloadZip(images, `${username} - all images`);
+                _images = await imageResolverGallery.parse(username);
+                _uiEngine.changeButtonText(`Downloading ${_images.length} images...`);
+                // for(let image of _images){
+                //     await image.loadImage();
+                // }
+                await doDownload(_images);
+                await doDownloadZip(_images, `${username} - all images`);
+                destroy();
             });
         };
         if (_intervalUid == 0) {

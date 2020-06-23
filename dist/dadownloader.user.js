@@ -520,7 +520,7 @@ module.exports = function (list, options) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ./utils/Utils */ "./src/utils/Utils.ts"), __webpack_require__(/*! JSZip */ "JSZip"), __webpack_require__(/*! ./engine/impl/UIEngine */ "./src/engine/impl/UIEngine.ts"), __webpack_require__(/*! ./manager/module/ImageResolverGallery */ "./src/manager/module/ImageResolverGallery.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Utils_1, JSZip, UIEngine_1, ImageResolverGallery_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! JSZip */ "JSZip"), __webpack_require__(/*! ./engine/impl/UIEngine */ "./src/engine/impl/UIEngine.ts"), __webpack_require__(/*! ./manager/module/ImageResolverGallery */ "./src/manager/module/ImageResolverGallery.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, JSZip, UIEngine_1, ImageResolverGallery_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Main = void 0;
@@ -536,12 +536,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 zip.file(img.title, img.image);
             }
             return zip.generateAsync({ type: "blob" }).then(blob => {
-                if (!title) {
-                    title = Utils_1.QueryString.tags;
-                }
-                else {
-                    title = `${Utils_1.QueryString.tags} (${title})`;
-                }
                 saveAs(blob, title + ".zip");
             });
         }
@@ -554,6 +548,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             _uiEngine.destroy();
             _init = false;
         }
+        async function doDownload(images) {
+            let count = 0;
+            let failedImages = [];
+            let pArray = images.map(im => im.loadImage().then(() => {
+                count++;
+                _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+            }).catch(() => {
+                failedImages.push(im);
+            }));
+            if (failedImages.length > 0) {
+                return doDownload(failedImages);
+            }
+            await Promise.all(pArray);
+            return Promise.resolve();
+        }
         function init() {
             let load = () => {
                 _uiEngine = new UIEngine_1.UIEngine(document);
@@ -564,8 +573,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     let username = document.querySelectorAll("#content-container [data-username]")[1].dataset.username;
                     // harcode for all images for now
                     let imageResolverGallery = new ImageResolverGallery_1.ImageResolverGallery();
-                    let images = await imageResolverGallery.parse(username);
-                    await doDownloadZip(images, `${username} - all images`);
+                    _images = await imageResolverGallery.parse(username);
+                    _uiEngine.changeButtonText(`Downloading ${_images.length} images...`);
+                    // for(let image of _images){
+                    //     await image.loadImage();
+                    // }
+                    await doDownload(_images);
+                    await doDownloadZip(_images, `${username} - all images`);
+                    destroy();
                 });
             };
             if (_intervalUid == 0) {
@@ -684,7 +699,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts"), __webpack_require__(/*! ../utils/HtmlExtractor */ "./src/utils/HtmlExtractor.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1, HtmlExtractor_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AbstractImageResolver = void 0;
@@ -695,24 +710,27 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         async parse(userName) {
             let query = this.getQuery(userName);
             let rep = await this._doQuery(query);
-            let returnArr = this._parseResp(rep);
-            while (rep.has_more) {
-                query.offset = rep.next_offset;
+            let returnArr = await this._parseResp(rep);
+            while (rep.hasMore) {
+                query.offset = rep.nextOffset;
                 rep = await this._doQuery(query);
-                returnArr = returnArr.concat(this._parseResp(rep));
+                returnArr = returnArr.concat(await this._parseResp(rep));
             }
             return returnArr;
         }
         _doQuery(query) {
             return this._queryEngine.query(query);
         }
-        _parseResp(rep) {
+        async _parseResp(rep) {
             let retArra = [];
             let results = rep.results;
             for (let result of results) {
                 let r = result.deviation;
-                if (r.is_downloadable) {
-                    retArra.push(new IDAimage_1.IDAimage(r));
+                if (r) {
+                    if (r.isDownloadable) {
+                        r.url = await HtmlExtractor_1.HtmlExtractor.getDownloadUrl(r);
+                        retArra.push(new IDAimage_1.IDAimage(r));
+                    }
                 }
             }
             return retArra;
@@ -794,23 +812,15 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     class IDAimage {
         constructor(image) {
             this._actualImage = null;
-            this._title = image.title;
-            this._filesize = image.filesize;
-            this._src = image.src;
-            this._res = `${image.width}x${image.height}`;
+            this._title = image.title + ".jpg";
+            this.url = image.url;
             this._actualImage = null;
         }
         get title() {
             return this._title;
         }
         get src() {
-            return this._src;
-        }
-        get res() {
-            return this._res;
-        }
-        get filesize() {
-            return this._filesize;
+            return this.url;
         }
         get isInit() {
             return this._actualImage != null;
@@ -828,12 +838,46 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             if (this.isInit) {
                 return Promise.resolve();
             }
-            return Utils_1.AjaxUtils.loadImage(this._src).then(image => {
+            return Utils_1.AjaxUtils.loadImage(this.url).then(image => {
                 this._actualImage = image;
             });
         }
     }
     exports.IDAimage = IDAimage;
+}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ }),
+
+/***/ "./src/utils/HtmlExtractor.ts":
+/*!************************************!*\
+  !*** ./src/utils/HtmlExtractor.ts ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.HtmlExtractor = void 0;
+    var HtmlExtractor;
+    (function (HtmlExtractor) {
+        async function getDownloadUrl(responseQuery) {
+            let query = responseQuery.url;
+            let html = await (await fetch(query)).text();
+            let domParser = new DOMParser();
+            let document = domParser.parseFromString(html, "text/html");
+            let root = document.getElementById("root");
+            let downloadButton = root.querySelector("a[data-hook='download_button']");
+            if (downloadButton == null) {
+                alert("Unable to obtain download, exception not handled");
+                throw new Error("Unable to obtain download");
+            }
+            return downloadButton.href;
+        }
+        HtmlExtractor.getDownloadUrl = getDownloadUrl;
+    })(HtmlExtractor = exports.HtmlExtractor || (exports.HtmlExtractor = {}));
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 

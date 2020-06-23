@@ -1,15 +1,12 @@
 export type ImageContainerTyping = {
     title: string,
-    src: string,
-    height: number,
-    width: number,
-    filesize: number,
+    url: string,
     isDownloadable:boolean
 };
 
 export type ResponseWrapper = {
-    has_more: boolean,
-    next_offset: number,
+    hasMore: boolean,
+    nextOffset: number,
     results: [{
         deviation: ImageContainerTyping
     }]

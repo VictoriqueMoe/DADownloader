@@ -4,16 +4,12 @@ import {AjaxUtils} from "../utils/Utils";
 export class IDAimage {
 
     private readonly _title:string;
-    private readonly _src:string;
-    private readonly _res:string;
-    private readonly _filesize:number;
+    private readonly url:string;
     private _actualImage:Blob = null
 
     constructor(image:ImageContainerTyping) {
-        this._title = image.title;
-        this._filesize = image.filesize;
-        this._src = image.src;
-        this._res = `${image.width}x${image.height}`;
+        this._title = image.title + ".jpg";
+        this.url = image.url;
         this._actualImage = null;
     }
 
@@ -22,15 +18,7 @@ export class IDAimage {
     }
 
     public get src(): string {
-        return this._src;
-    }
-
-    public get res(): string {
-        return this._res;
-    }
-
-    public get filesize(): number {
-        return this._filesize;
+        return this.url;
     }
 
     public get isInit(): boolean {
@@ -52,7 +40,7 @@ export class IDAimage {
         if (this.isInit) {
             return Promise.resolve();
         }
-        return AjaxUtils.loadImage(this._src).then(image => {
+        return AjaxUtils.loadImage(this.url).then(image => {
             this._actualImage = image;
         });
     }

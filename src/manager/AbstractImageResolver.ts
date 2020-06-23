@@ -1,7 +1,8 @@
 import {IDAimage} from "../model/IDAimage";
 import {IQueryEngine} from "./IQueryEngine";
 import {QueryEngine} from "./impl/QueryEngine";
-import {ImageContainerTyping, Query, ResponseWrapper} from "../model/typings";
+import {Query, ResponseWrapper} from "../model/typings";
+import {HtmlExtractor} from "../utils/HtmlExtractor";
 
 export abstract class AbstractImageResolver{
     private _queryEngine: IQueryEngine = new QueryEngine();
@@ -9,26 +10,28 @@ export abstract class AbstractImageResolver{
     public async parse(userName: string): Promise<IDAimage[]> {
         let query = this.getQuery(userName);
         let rep = await this._doQuery(query);
-        let returnArr = this._parseResp(rep);
-        while(rep.has_more){
-            query.offset = rep.next_offset;
+        let returnArr = await this._parseResp(rep);
+        while(rep.hasMore){
+            query.offset = rep.nextOffset;
             rep = await this._doQuery(query)
-            returnArr = returnArr.concat(this._parseResp(rep));
+            returnArr = returnArr.concat(await this._parseResp(rep));
         }
         return returnArr;
     }
 
     private _doQuery(query:Query):Promise<ResponseWrapper>{
+
         return this._queryEngine.query(query);
     }
 
-    private _parseResp(rep: ResponseWrapper):IDAimage[]{
+    private async _parseResp(rep: ResponseWrapper):Promise<IDAimage[]>{
         let retArra:IDAimage[] = [];
         let results = rep.results;
         for(let result of results){
             let r = result.deviation;
             if(r){
-                if(r.is_downloadable){
+                if(r.isDownloadable){
+                    r.url =await HtmlExtractor.getDownloadUrl(r);
                     retArra.push(new IDAimage(r));
                 }
             }
