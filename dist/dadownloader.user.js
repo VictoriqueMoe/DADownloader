@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Deviant Art Auto Downloader
 // @namespace    victorique.moe
-// @version      0.0.1-ALPHA
+// @version      1.0.0
 // @description  in test
 // @author       Victorique
 // @match        https://www.deviantart.com/*
@@ -578,8 +578,13 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     // for(let image of _images){
                     //     await image.loadImage();
                     // }
-                    await doDownload(_images);
-                    await doDownloadZip(_images, `${username} - all images`);
+                    if (_images.length === 0) {
+                        alert("No images can be download, this is not an error, the artist has not got any images publicly available for download");
+                    }
+                    else {
+                        await doDownload(_images);
+                        await doDownloadZip(_images, `${username} - all images`);
+                    }
                     destroy();
                 });
             };

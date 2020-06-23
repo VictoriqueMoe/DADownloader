@@ -62,8 +62,12 @@ export module Main {
                 // for(let image of _images){
                 //     await image.loadImage();
                 // }
-                await doDownload(_images);
-                await doDownloadZip(_images, `${username} - all images`);
+                if(_images.length === 0){
+                    alert("No images can be download, this is not an error, the artist has not got any images publicly available for download")
+                }else{
+                    await doDownload(_images);
+                    await doDownloadZip(_images, `${username} - all images`);
+                }
                 destroy();
             });
         };
