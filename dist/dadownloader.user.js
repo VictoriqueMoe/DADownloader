@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Deviant Art Auto Downloader
 // @namespace    victorique.moe
-// @version      1.0.2
+// @version      1.0.3
 // @description  in test
 // @author       Victorique
 // @match        https://www.deviantart.com/*
@@ -547,12 +547,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             Main._uiEngine.destroy();
             _init = false;
         }
-        async function doDownload(images) {
+        /*async function doDownload(images: DAimage[]): Promise<void> {
             let count = 0;
-            let failedImages = [];
-            let pArray = images.map(im => im.loadImage().then(() => {
+            let failedImages: DAimage[] = [];
+            let pArray = images.map(im => im.loadImage().then(()=> {
                 count++;
-                Main._uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+                _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
             }).catch(() => {
                 failedImages.push(im);
             }));
@@ -562,6 +562,23 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 }
             });
             return Promise.resolve();
+        }*/
+        async function doDownload(images) {
+            let count = 0;
+            let failedImages = [];
+            for (let image of images) {
+                try {
+                    await image.loadImage();
+                    count++;
+                    Main._uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+                }
+                catch {
+                    failedImages.push(image);
+                }
+            }
+            if (failedImages.length > 0) {
+                return doDownload(failedImages);
+            }
         }
         function init() {
             let load = () => {

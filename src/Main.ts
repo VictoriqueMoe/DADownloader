@@ -29,7 +29,7 @@ export module Main {
         _init = false;
     }
 
-    async function doDownload(images: DAimage[]): Promise<void> {
+    /*async function doDownload(images: DAimage[]): Promise<void> {
         let count = 0;
         let failedImages: DAimage[] = [];
         let pArray = images.map(im => im.loadImage().then(()=> {
@@ -44,6 +44,24 @@ export module Main {
             }
         });
         return Promise.resolve();
+    }*/
+
+
+    async function doDownload(images: DAimage[]): Promise<void> {
+        let count = 0;
+        let failedImages:DAimage[] = [];
+        for(let image of images){
+            try{
+                await image.loadImage();
+                count++;
+                _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+            }catch  {
+                failedImages.push(image);
+            }
+        }
+        if(failedImages.length > 0){
+            return doDownload(failedImages);
+        }
     }
 
     export function init() {
