@@ -3,9 +3,11 @@ import {IQueryEngine} from "./IQueryEngine";
 import {QueryEngine} from "./impl/QueryEngine";
 import {Query, ResponseWrapper} from "../model/typings";
 import {HtmlExtractor} from "../utils/HtmlExtractor";
+import {Main} from "../Main";
 
 export abstract class AbstractImageResolver{
     private _queryEngine: IQueryEngine = new QueryEngine();
+    private _counter = 0;
 
     public async parse(userName: string): Promise<IDAimage[]> {
         let query = this.getQuery(userName);
@@ -16,6 +18,7 @@ export abstract class AbstractImageResolver{
             rep = await this._doQuery(query)
             returnArr = returnArr.concat(await this._parseResp(rep));
         }
+        this._counter = 0;
         return returnArr;
     }
 
@@ -31,8 +34,10 @@ export abstract class AbstractImageResolver{
             let r = result.deviation;
             if(r){
                 if(r.isDownloadable){
+                    this._counter ++;
                     r.url =await HtmlExtractor.getDownloadUrl(r);
                     retArra.push(new IDAimage(r));
+                    Main._uiEngine.changeButtonText(`Downloadable images found: ${this._counter}`);
                 }
             }
         }

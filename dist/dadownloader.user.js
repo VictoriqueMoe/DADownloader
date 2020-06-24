@@ -528,7 +528,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
     (function (Main) {
         let _images = [];
         let _intervalUid = 0;
-        let _uiEngine;
         let _init = false;
         function doDownloadZip(files, title) {
             let zip = new JSZip();
@@ -545,7 +544,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 return;
             }
             _images = [];
-            _uiEngine.destroy();
+            Main._uiEngine.destroy();
             _init = false;
         }
         async function doDownload(images) {
@@ -553,7 +552,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             let failedImages = [];
             let pArray = images.map(im => im.loadImage().then(() => {
                 count++;
-                _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
+                Main._uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);
             }).catch(() => {
                 failedImages.push(im);
             }));
@@ -566,16 +565,16 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         function init() {
             let load = () => {
-                _uiEngine = new UIEngine_1.UIEngine(document);
-                _uiEngine.buildUI();
+                Main._uiEngine = new UIEngine_1.UIEngine(document);
+                Main._uiEngine.buildUI();
                 document.getElementById("downloadAllInit").addEventListener("click", async (ev) => {
                     ev.preventDefault();
-                    _uiEngine.changeButtonText("Downloading please wait...");
+                    Main._uiEngine.changeButtonText("Finding downloadable images...");
                     let username = document.querySelectorAll("#content-container [data-username]")[1].dataset.username;
                     // harcode for all images for now
                     let imageResolverGallery = new ImageResolverGallery_1.ImageResolverGallery();
                     _images = await imageResolverGallery.parse(username);
-                    _uiEngine.changeButtonText(`Downloading ${_images.length} images...`);
+                    Main._uiEngine.changeButtonText(`Downloading ${_images.length} images...`);
                     // for(let image of _images){
                     //     await image.loadImage();
                     // }
@@ -709,13 +708,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts"), __webpack_require__(/*! ../utils/HtmlExtractor */ "./src/utils/HtmlExtractor.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1, HtmlExtractor_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts"), __webpack_require__(/*! ../utils/HtmlExtractor */ "./src/utils/HtmlExtractor.ts"), __webpack_require__(/*! ../Main */ "./src/Main.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1, HtmlExtractor_1, Main_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AbstractImageResolver = void 0;
     class AbstractImageResolver {
         constructor() {
             this._queryEngine = new QueryEngine_1.QueryEngine();
+            this._counter = 0;
         }
         async parse(userName) {
             let query = this.getQuery(userName);
@@ -726,6 +726,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 rep = await this._doQuery(query);
                 returnArr = returnArr.concat(await this._parseResp(rep));
             }
+            this._counter = 0;
             return returnArr;
         }
         _doQuery(query) {
@@ -738,8 +739,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                 let r = result.deviation;
                 if (r) {
                     if (r.isDownloadable) {
+                        this._counter++;
                         r.url = await HtmlExtractor_1.HtmlExtractor.getDownloadUrl(r);
                         retArra.push(new IDAimage_1.IDAimage(r));
+                        Main_1.Main._uiEngine.changeButtonText(`Downloadable images found: ${this._counter}`);
                     }
                 }
             }

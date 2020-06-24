@@ -8,7 +8,7 @@ import {ImageResolverGallery} from "./manager/module/ImageResolverGallery";
 export module Main {
     let _images: IDAimage[] = [];
     let _intervalUid: number = 0;
-    let _uiEngine: IUIEngine;
+    export let _uiEngine: IUIEngine;
     let _init = false;
 
     export function doDownloadZip(files: IDAimage[], title: string): Promise<void> {
@@ -53,7 +53,7 @@ export module Main {
             _uiEngine.buildUI();
             document.getElementById("downloadAllInit").addEventListener("click", async ev => {
                 ev.preventDefault();
-                _uiEngine.changeButtonText("Downloading please wait...");
+                _uiEngine.changeButtonText("Finding downloadable images...");
                 let username = (document.querySelectorAll("#content-container [data-username]")[1] as HTMLElement).dataset.username;
                 // harcode for all images for now
                 let imageResolverGallery = new ImageResolverGallery();
