@@ -1,20 +1,19 @@
-import {QueryString} from "./utils/Utils";
 import * as JSZip from "JSZip";
-import {IDAimage} from "./model/IDAimage";
+import {DAimage} from "./model/DAimage";
 import {UIEngine} from "./engine/impl/UIEngine";
 import {IUIEngine} from "./engine/IUIEngine";
 import {ImageResolverGallery} from "./manager/module/ImageResolverGallery";
 
 export module Main {
-    let _images: IDAimage[] = [];
+    let _images: DAimage[] = [];
     let _intervalUid: number = 0;
     export let _uiEngine: IUIEngine;
     let _init = false;
 
-    export function doDownloadZip(files: IDAimage[], title: string): Promise<void> {
+    export function doDownloadZip(files: DAimage[], title: string): Promise<void> {
         let zip: JSZip = new JSZip();
         for (let img of files) {
-            zip.file(img.title, img.image);
+            zip.file(`${img.title}.${img.imageFormat}`, img.image);
         }
         return zip.generateAsync({type: "blob"}).then(blob => {
             saveAs(blob, title + ".zip");
@@ -30,9 +29,9 @@ export module Main {
         _init = false;
     }
 
-    async function doDownload(images: IDAimage[]): Promise<void> {
+    async function doDownload(images: DAimage[]): Promise<void> {
         let count = 0;
-        let failedImages: IDAimage[] = [];
+        let failedImages: DAimage[] = [];
         let pArray = images.map(im => im.loadImage().then(()=> {
             count++;
             _uiEngine.changeButtonText(`Downloading image ${count} of ${images.length}`);

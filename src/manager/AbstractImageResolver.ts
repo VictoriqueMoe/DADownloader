@@ -1,4 +1,4 @@
-import {IDAimage} from "../model/IDAimage";
+import {DAimage} from "../model/DAimage";
 import {IQueryEngine} from "./IQueryEngine";
 import {QueryEngine} from "./impl/QueryEngine";
 import {Query, ResponseWrapper} from "../model/typings";
@@ -9,7 +9,7 @@ export abstract class AbstractImageResolver{
     private _queryEngine: IQueryEngine = new QueryEngine();
     private _counter = 0;
 
-    public async parse(userName: string): Promise<IDAimage[]> {
+    public async parse(userName: string): Promise<DAimage[]> {
         this._counter = 0;
         let query = this.getQuery(userName);
         let rep = await this._doQuery(query);
@@ -28,16 +28,16 @@ export abstract class AbstractImageResolver{
         return this._queryEngine.query(query);
     }
 
-    private async _parseResp(rep: ResponseWrapper):Promise<IDAimage[]>{
-        let retArra:IDAimage[] = [];
+    private async _parseResp(rep: ResponseWrapper):Promise<DAimage[]>{
+        let retArra:DAimage[] = [];
         let results = rep.results;
         for(let result of results){
             let r = result.deviation;
             if(r){
                 if(r.isDownloadable){
                     this._counter ++;
-                    r.url =await HtmlExtractor.getDownloadUrl(r);
-                    retArra.push(new IDAimage(r));
+                    r.url = await HtmlExtractor.getDownloadUrl(r);
+                    retArra.push(new DAimage(r));
                     Main._uiEngine.changeButtonText(`Downloadable images found: ${this._counter}`);
                 }
             }

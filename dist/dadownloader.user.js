@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Deviant Art Auto Downloader
 // @namespace    victorique.moe
-// @version      1.0.1
+// @version      1.0.2
 // @description  in test
 // @author       Victorique
 // @match        https://www.deviantart.com/*
@@ -532,7 +532,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         function doDownloadZip(files, title) {
             let zip = new JSZip();
             for (let img of files) {
-                zip.file(img.title, img.image);
+                zip.file(`${img.title}.${img.imageFormat}`, img.image);
             }
             return zip.generateAsync({ type: "blob" }).then(blob => {
                 saveAs(blob, title + ".zip");
@@ -708,7 +708,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/IDAimage */ "./src/model/IDAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts"), __webpack_require__(/*! ../utils/HtmlExtractor */ "./src/utils/HtmlExtractor.ts"), __webpack_require__(/*! ../Main */ "./src/Main.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, IDAimage_1, QueryEngine_1, HtmlExtractor_1, Main_1) {
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../model/DAimage */ "./src/model/DAimage.ts"), __webpack_require__(/*! ./impl/QueryEngine */ "./src/manager/impl/QueryEngine.ts"), __webpack_require__(/*! ../utils/HtmlExtractor */ "./src/utils/HtmlExtractor.ts"), __webpack_require__(/*! ../Main */ "./src/Main.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, DAimage_1, QueryEngine_1, HtmlExtractor_1, Main_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AbstractImageResolver = void 0;
@@ -718,6 +718,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             this._counter = 0;
         }
         async parse(userName) {
+            this._counter = 0;
             let query = this.getQuery(userName);
             let rep = await this._doQuery(query);
             let returnArr = await this._parseResp(rep);
@@ -741,7 +742,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                     if (r.isDownloadable) {
                         this._counter++;
                         r.url = await HtmlExtractor_1.HtmlExtractor.getDownloadUrl(r);
-                        retArra.push(new IDAimage_1.IDAimage(r));
+                        retArra.push(new DAimage_1.DAimage(r));
                         Main_1.Main._uiEngine.changeButtonText(`Downloadable images found: ${this._counter}`);
                     }
                 }
@@ -811,21 +812,21 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
 
 /***/ }),
 
-/***/ "./src/model/IDAimage.ts":
-/*!*******************************!*\
-  !*** ./src/model/IDAimage.ts ***!
-  \*******************************/
+/***/ "./src/model/DAimage.ts":
+/*!******************************!*\
+  !*** ./src/model/DAimage.ts ***!
+  \******************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(/*! ../utils/Utils */ "./src/utils/Utils.ts")], __WEBPACK_AMD_DEFINE_RESULT__ = (function (require, exports, Utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.IDAimage = void 0;
-    class IDAimage {
+    exports.DAimage = void 0;
+    class DAimage {
         constructor(image) {
             this._actualImage = null;
-            this._title = image.title + ".jpg";
+            this._title = image.title;
             this.url = image.url;
             this._actualImage = null;
         }
@@ -837,6 +838,9 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
         }
         get isInit() {
             return this._actualImage != null;
+        }
+        get imageFormat() {
+            return this._imageFormat;
         }
         get image() {
             if (!this.isInit) {
@@ -853,10 +857,12 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }
             return Utils_1.AjaxUtils.loadImage(this.url).then(image => {
                 this._actualImage = image;
+                let type = this._actualImage.type;
+                this._imageFormat = type.split("/").pop();
             });
         }
     }
-    exports.IDAimage = IDAimage;
+    exports.DAimage = DAimage;
 }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
