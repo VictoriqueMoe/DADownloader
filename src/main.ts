@@ -39,11 +39,11 @@ export module Main {
         }).catch(() => {
             failedImages.push(im);
         }));
-        if (failedImages.length > 0) {
-            return doDownload(failedImages);
-        }
-
-        await Promise.all(pArray);
+        await Promise.all(pArray).then(() => {
+            if (failedImages.length > 0) {
+                return doDownload(failedImages);
+            }
+        });
         return Promise.resolve();
     }
 
@@ -77,6 +77,10 @@ export module Main {
                     return;
                 }
                 let isRightPage = document.location.href.includes("gallery/all");
+                let widgetEixsts = document.getElementById("downloadAllInit");
+                if(widgetEixsts == null){
+                    _init = false;
+                }
                 if (isRightPage) {
                     if (!_init) {
                         _init = true;

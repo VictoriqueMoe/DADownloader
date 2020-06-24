@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Deviant Art Auto Downloader
 // @namespace    victorique.moe
-// @version      1.0.0
+// @version      1.0.1
 // @description  in test
 // @author       Victorique
 // @match        https://www.deviantart.com/*
@@ -557,10 +557,11 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
             }).catch(() => {
                 failedImages.push(im);
             }));
-            if (failedImages.length > 0) {
-                return doDownload(failedImages);
-            }
-            await Promise.all(pArray);
+            await Promise.all(pArray).then(() => {
+                if (failedImages.length > 0) {
+                    return doDownload(failedImages);
+                }
+            });
             return Promise.resolve();
         }
         function init() {
@@ -594,6 +595,10 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_
                         return;
                     }
                     let isRightPage = document.location.href.includes("gallery/all");
+                    let widgetEixsts = document.getElementById("downloadAllInit");
+                    if (widgetEixsts == null) {
+                        _init = false;
+                    }
                     if (isRightPage) {
                         if (!_init) {
                             _init = true;
