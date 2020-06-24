@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Deviant Art Auto Downloader
 // @namespace    victorique.moe
-// @version      1.0.3
+// @version      1.0.4
 // @description  in test
 // @author       Victorique
 // @match        https://www.deviantart.com/*
