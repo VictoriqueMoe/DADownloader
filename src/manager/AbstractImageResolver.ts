@@ -10,6 +10,7 @@ export abstract class AbstractImageResolver{
     private _counter = 0;
 
     public async parse(userName: string): Promise<IDAimage[]> {
+        this._counter = 0;
         let query = this.getQuery(userName);
         let rep = await this._doQuery(query);
         let returnArr = await this._parseResp(rep);
